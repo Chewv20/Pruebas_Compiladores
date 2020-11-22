@@ -3,16 +3,6 @@ defmodule Lexer do
     Enum.flat_map(words, &lex_raw_tokens/1)
   end
 
-  def get_constant(program) do
-    case Regex.run(~r/^\d+/, program) do
-      [value] ->
-        {{:constant, String.to_integer(value)}, String.trim_leading(program, value)}
-
-      program ->
-        {:error, "Token not valid: #{program}"}
-    end
-  end
-
   def lex_raw_tokens(program) when program != "" do
     {token, rest} =
       case program do
@@ -54,5 +44,15 @@ defmodule Lexer do
 
   def lex_raw_tokens(_program) do
     []
+  end
+ 
+  def get_constant(program) do
+    case Regex.run(~r/^\d+/, program) do
+      [value] ->
+        {{:constant, String.to_integer(value)}, String.trim_leading(program, value)}
+
+      program ->
+        {:error, "Token not valid: #{program}"}
+    end
   end
 end

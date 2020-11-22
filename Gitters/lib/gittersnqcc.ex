@@ -3,49 +3,67 @@ defmodule Gittersnqcc do
   Documentation for Nqcc.
   """
   @commands %{
-    "help" => "Prints this help"
+    "-h" => "Prints this help", #help
+	"-c" => "Shows compiler output", #Compiler
+	"-l" => "Shows token list", #Lexer
+	"-t" => "Display output in tree format", #Parser
+	"-a" => "Shows assembler code" #Assembler
   }
 
   def main(args) do
     IO.inspect{args}
-	args
-    |> parse_args
-    |> process_args
+	case (args) do 
+	["-h"] -> fhelp()
+	["-c",file_name] -> fcompiler(file_name)
+	["-a",file_name] -> fassembler(file_name)
+	["-l",file_name] -> flexer(file_name)
+	["-t",file_name] -> fparser(file_name)
+#	_ -> ferror()
+	end    
   end
-
-  def parse_args(args) do
-    OptionParser.parse(args, switches: [help: :boolean])
+  
+  defp fhelp do 
+  IO.puts("This is the users help:\n")
+  @commands 
+	|> Enum.map(fn {command, description} -> IO.puts(" #{command} -> #{description}")end)
   end
-
-  defp process_args({[help: true], _, _}) do
-    print_help_message()
+  
+  defp  fcompiler (file_name) do 
+  IO.puts("This is the compiler output:\n")
+  assembly_path = String.replace_trailing(file_name,".c",".s")
+  
+  File.read!(file_name)
+  |> Sanitizer.sanitize_source()
+  |> Lexer.scan_words()
+  |> Parser.parse_program()
+  |> CodeGenerator.generate_code()
+  |> Linker.generate_binary(assembly_path)
   end
-
-  defp process_args({_, [file_name], _}) do
-    compile_file(file_name)
+  
+  defp fassembler(file_name) do
+  IO.puts("Code generared:")
+  
+  File.read!(file_name)
+  |> Sanitizer.sanitize_source()
+  |> Lexer.scan_words()
+  |> Parser.parse_program()
+  |> CodeGenerator.generate_code()
   end
-
-  defp compile_file(file_path) do
-    IO.puts("Compiling file: " <> file_path)
-    assembly_path = String.replace_trailing(file_path, ".c", ".s")
-
-    File.read!(file_path)
-    |> Sanitizer.sanitize_source()
-    |> IO.inspect(label: "\nSanitizer ouput")
-    |> Lexer.scan_words()
-    |> IO.inspect(label: "\nLexer ouput")
-    |> Parser.parse_program()
-    |> IO.inspect(label: "\nParser ouput")
-    |> CodeGenerator.generate_code()
-    |> Linker.generate_binary(assembly_path)
-  end
-
-  defp print_help_message do
-    IO.puts("\nnqcc --help file_name \n")
-
-    IO.puts("\nThe compiler supports following options:\n")
-
-    @commands
-    |> Enum.map(fn {command, description} -> IO.puts("  #{command} - #{description}") end)
-  end
-end
+ 
+ defp flexer(file_name) do
+ File.read!(file_name)
+  |> Sanitizer.sanitize_source()
+  |> Lexer.scan_words()
+  |> IO.inspect(label: "\nToken list")
+ end
+ 
+ defp fparser(file_name) do
+ 
+   File.read!(file_name)
+  |> Sanitizer.sanitize_source()
+  |> Lexer.scan_words()
+  |> Parser.parse_program()
+  |> IO.inspect(label: "\nTree")
+ end
+ end
+ 
